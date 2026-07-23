@@ -1,0 +1,224 @@
+@import 'tailwindcss';
+
+/*
+ * A dark-only instrument palette, and one rule behind it: colour means
+ * something here, so none is spent on chrome.
+ *
+ * Buttons, active tabs and focus rings are bone white on graphite - no brand
+ * hue at all. Everything chromatic on the page is therefore load-bearing: the
+ * severity ramp, and a teal that marks exactly one thing, a finding some
+ * deterministic tool independently corroborated. Nothing competes with them.
+ *
+ * There is no light theme. `color-scheme` below tells the browser that, so
+ * native selects, file inputs, scrollbars and autofill render dark too.
+ */
+:root {
+  color-scheme: dark;
+
+  --background: #0a0d14;
+  --surface: #0f131b;
+  --surface-raised: #12161f;
+  --surface-overlay: #1a1f2b;
+  --border: #262c38;
+  --border-muted: #1b202b;
+  --foreground: #eceff4;
+  --muted: #8b93a7;
+
+  /* The "accent" is an absence of one: bone white, dark type on top. */
+  --accent: #eceff4;
+  --accent-hover: #ffffff;
+  --accent-soft: rgba(236, 239, 244, 0.09);
+  --accent-ring: rgba(236, 239, 244, 0.28);
+  --accent-contrast: #0a0d14;
+
+  /* Reserved for corroboration. Nothing else may use it. */
+  --verified: #2dd4bf;
+  --verified-soft: rgba(45, 212, 191, 0.12);
+  --verified-ring: rgba(45, 212, 191, 0.35);
+
+  --danger: #ff4d6d;
+  --danger-soft: rgba(255, 77, 109, 0.12);
+  --danger-ring: rgba(255, 77, 109, 0.35);
+
+  --code-background: #0a0e15;
+  --line-added: rgba(45, 212, 191, 0.09);
+  --line-removed: rgba(255, 77, 109, 0.09);
+  --line-highlight: rgba(255, 197, 61, 0.07);
+
+  --severity-critical: #ff4d6d;
+  --severity-critical-soft: rgba(255, 77, 109, 0.14);
+  --severity-critical-ring: rgba(255, 77, 109, 0.35);
+  --severity-high: #ff8a3d;
+  --severity-high-soft: rgba(255, 138, 61, 0.14);
+  --severity-high-ring: rgba(255, 138, 61, 0.35);
+  --severity-medium: #ffc53d;
+  --severity-medium-soft: rgba(255, 197, 61, 0.14);
+  --severity-medium-ring: rgba(255, 197, 61, 0.35);
+  --severity-low: #38bdf8;
+  --severity-low-soft: rgba(56, 189, 248, 0.14);
+  --severity-low-ring: rgba(56, 189, 248, 0.35);
+  --severity-info: #7a8399;
+  --severity-info-soft: rgba(122, 131, 153, 0.16);
+  --severity-info-ring: rgba(122, 131, 153, 0.35);
+
+  /* Sticky offsets: the review toolbar pins under the app header, and file
+   * headers pin under the toolbar. Kept here so the three cannot drift. */
+  --app-header-height: 3.25rem;
+  --review-toolbar-height: 3.25rem;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-overlay: var(--surface-overlay);
+  --color-border-default: var(--border);
+  --color-border-muted: var(--border-muted);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-ring: var(--accent-ring);
+  --color-accent-contrast: var(--accent-contrast);
+
+  --color-verified: var(--verified);
+  --color-verified-soft: var(--verified-soft);
+  --color-verified-ring: var(--verified-ring);
+
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-danger-ring: var(--danger-ring);
+
+  --color-code-background: var(--code-background);
+  --color-line-added: var(--line-added);
+  --color-line-removed: var(--line-removed);
+  --color-line-highlight: var(--line-highlight);
+
+  --color-severity-critical: var(--severity-critical);
+  --color-severity-critical-soft: var(--severity-critical-soft);
+  --color-severity-critical-ring: var(--severity-critical-ring);
+  --color-severity-high: var(--severity-high);
+  --color-severity-high-soft: var(--severity-high-soft);
+  --color-severity-high-ring: var(--severity-high-ring);
+  --color-severity-medium: var(--severity-medium);
+  --color-severity-medium-soft: var(--severity-medium-soft);
+  --color-severity-medium-ring: var(--severity-medium-ring);
+  --color-severity-low: var(--severity-low);
+  --color-severity-low-soft: var(--severity-low-soft);
+  --color-severity-low-ring: var(--severity-low-ring);
+  --color-severity-info: var(--severity-info);
+  --color-severity-info-soft: var(--severity-info-soft);
+  --color-severity-info-ring: var(--severity-info-ring);
+
+  --font-sans: var(--font-plex-sans);
+  --font-mono: var(--font-jetbrains-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/*
+ * Type scale. The app is dense on purpose - a reviewer wants more findings on
+ * screen, not more air - so the scale is tight and the weight does the work.
+ */
+.text-title {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+.text-section {
+  font-size: 0.9375rem;
+  line-height: 1.375rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* Small caps-ish label above a panel: says "this is a category", not content. */
+.text-eyebrow {
+  font-size: 0.6875rem;
+  line-height: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* Code surfaces use tabular figures so line numbers stay in a straight column. */
+.code-surface {
+  font-family: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, monospace;
+  font-size: 12.5px;
+  line-height: 20px;
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * The provenance rail.
+ *
+ * It answers exactly one question - was this claim independently reproduced -
+ * and deliberately not "how bad is it": severity is already on the pill beside
+ * the title and on the gutter bar next to the line. A rail that repeated it
+ * would be decoration, and decoration is what a coloured side stripe looks
+ * like when it is not carrying anything.
+ *
+ * So: teal when a deterministic tool reproduced the finding, neutral when it
+ * did not, and broken when only the model ever asserted it. Unverified
+ * evidence literally looks unfinished, which is the judgement a reviewer has
+ * to make anyway.
+ */
+.rail {
+  border-left: 2px solid var(--rail-color, var(--border));
+}
+
+.rail-dashed {
+  border-left: 2px solid transparent;
+  border-image: repeating-linear-gradient(
+      to bottom,
+      var(--rail-color, var(--border)) 0 5px,
+      transparent 5px 10px
+    )
+    1;
+}
+
+/*
+ * Visible focus everywhere; the default outline disappears on coloured chips.
+ *
+ * Written out rather than wrapped in `:where()`: that has zero specificity, so
+ * the browser's own `:focus-visible` rule wins the colour and the ring comes
+ * back grey instead of bone white.
+ */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Scrollbars, so a pinned file tree does not punch a light hole in the page. */
+* {
+  scrollbar-color: var(--border) transparent;
+  scrollbar-width: thin;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

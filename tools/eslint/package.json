@@ -1,0 +1,13 @@
+{
+  "name": "cra-eslint-runner",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Isolated ESLint toolchain used by the backend to analyse submitted JS/TS files",
+  "type": "module",
+  "devDependencies": {
+    "eslint": "^9.17.0",
+    "eslint-plugin-security": "^3.0.1",
+    "typescript-eslint": "^8.18.0",
+    "typescript": "^5.7.2"
+  }
+}

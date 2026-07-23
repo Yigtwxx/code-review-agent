@@ -1,0 +1,42 @@
+# --- secrets (NEVER commit) ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+
+# --- python ---
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.egg-info/
+dist/
+build/
+
+# --- node ---
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+.eslintcache
+
+# --- runtime data ---
+uploads/
+storage/
+*.log
+
+# --- benchmark output (raw runs; the filled tables live in docs/) ---
+benchmarks/results/
+
+# --- os / editor ---
+.DS_Store
+.idea/
+.vscode/
+
+# staj görev dökümanı — repoya girmez
+*.pdf
+.screenshots/

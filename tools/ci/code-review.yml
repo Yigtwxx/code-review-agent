@@ -1,0 +1,48 @@
+# Example workflow. Copy to `.github/workflows/code-review.yml` in the
+# repository you want reviewed.
+#
+# The review service runs a local model, so this expects a self-hosted runner
+# that can reach it. Required repository secrets:
+#   REVIEW_API_URL       e.g. http://review.internal:8000
+#   REVIEW_API_EMAIL     an account on that instance
+#   REVIEW_API_PASSWORD  its password
+name: AI Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  # A new push supersedes the review of the previous one.
+  group: ai-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history so the base commit is available to diff against.
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Review changed files
+        env:
+          REVIEW_API_URL: ${{ secrets.REVIEW_API_URL }}
+          REVIEW_API_EMAIL: ${{ secrets.REVIEW_API_EMAIL }}
+          REVIEW_API_PASSWORD: ${{ secrets.REVIEW_API_PASSWORD }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python tools/ci/review_pr.py \
+            --pr "${{ github.event.pull_request.number }}" \
+            --base-sha "${{ github.event.pull_request.base.sha }}" \
+            --head-sha "${{ github.event.pull_request.head.sha }}" \
+            --fail-on high

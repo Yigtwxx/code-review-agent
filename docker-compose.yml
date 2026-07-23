@@ -1,0 +1,39 @@
+services:
+  mongo:
+    image: mongo:7
+    container_name: cra-mongo
+    restart: unless-stopped
+    ports:
+      # Loopback-bound on purpose. A host mongod (e.g. brew mongodb-community)
+      # already listening on 127.0.0.1:27017 wins the name `localhost`, so a
+      # wildcard publish here would leave this container silently shadowed and
+      # empty while the app talks to the host one. Binding to loopback turns
+      # that collision into a startup error instead.
+      - '127.0.0.1:27017:27017'
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ['CMD', 'mongosh', '--quiet', '--eval', 'db.adminCommand("ping")']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Optional: browse the data at http://localhost:8081. It reaches the `mongo`
+  # service above over the compose network, so it only ever shows that
+  # container's data - not a mongod running on the host.
+  mongo-express:
+    image: mongo-express:1.0.2
+    container_name: cra-mongo-express
+    restart: unless-stopped
+    profiles: ['tools']
+    depends_on:
+      mongo:
+        condition: service_healthy
+    ports:
+      - '8081:8081'
+    environment:
+      ME_CONFIG_MONGODB_URL: mongodb://mongo:27017
+      ME_CONFIG_BASICAUTH: 'false'
+
+volumes:
+  mongo-data:

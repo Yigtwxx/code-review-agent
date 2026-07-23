@@ -1,0 +1,54 @@
+{
+  "description": "Labeled defects for the benchmark harness. Keys are the file paths as produced by app.ingest.loader.load_directory(samples/vulnerable). Each defect's `category` MUST be a slug from backend/app/schemas/finding.py::Category. Detection is scored with a +/-3 line tolerance against these anchors (see docs/sonuc-raporu.md section 2).",
+  "line_tolerance": 3,
+  "samples": {
+    "vulnerable_api.py": {
+      "language": "python",
+      "layer": "backend",
+      "defects": [
+        {"category": "hardcoded-secret", "line_start": 18, "line_end": 18, "severity": "critical", "note": "Stripe secret key committed to source"},
+        {"category": "hardcoded-secret", "line_start": 19, "line_end": 19, "severity": "critical", "note": "DB password hardcoded"},
+        {"category": "hardcoded-secret", "line_start": 20, "line_end": 20, "severity": "critical", "note": "AWS access key hardcoded"},
+        {"category": "sql-injection", "line_start": 28, "line_end": 28, "severity": "critical", "note": "username concatenated into SQL"},
+        {"category": "sql-injection", "line_start": 37, "line_end": 37, "severity": "critical", "note": "term interpolated into SQL via f-string"},
+        {"category": "xss", "line_start": 39, "line_end": 39, "severity": "high", "note": "reflected XSS, user input into HTML"},
+        {"category": "code-injection", "line_start": 46, "line_end": 46, "severity": "critical", "note": "eval on user input (RCE)"},
+        {"category": "command-injection", "line_start": 53, "line_end": 53, "severity": "critical", "note": "subprocess shell=True with interpolation"},
+        {"category": "insecure-deserialization", "line_start": 60, "line_end": 60, "severity": "critical", "note": "pickle.loads on request body"},
+        {"category": "weak-hash", "line_start": 65, "line_end": 65, "severity": "medium", "note": "MD5 used for password hashing"},
+        {"category": "tls-verification-disabled", "line_start": 70, "line_end": 70, "severity": "high", "note": "requests.get verify=False"},
+        {"category": "ssrf", "line_start": 70, "line_end": 70, "severity": "high", "note": "unvalidated user URL fetched"},
+        {"category": "path-traversal", "line_start": 75, "line_end": 75, "severity": "high", "note": "caller-controlled path join"},
+        {"category": "debug-mode-enabled", "line_start": 81, "line_end": 81, "severity": "high", "note": "Flask debug=True"},
+        {"category": "bind-all-interfaces", "line_start": 81, "line_end": 81, "severity": "medium", "note": "host 0.0.0.0"}
+      ]
+    },
+    "backend/orders.service.ts": {
+      "language": "typescript",
+      "layer": "backend",
+      "defects": [
+        {"category": "hardcoded-secret", "line_start": 13, "line_end": 13, "severity": "critical", "note": "DB credentials in connection URI"},
+        {"category": "hardcoded-secret", "line_start": 16, "line_end": 16, "severity": "critical", "note": "JWT signing secret hardcoded"},
+        {"category": "sql-injection", "line_start": 21, "line_end": 21, "severity": "critical", "note": "status concatenated into SQL"},
+        {"category": "swallowed-exception", "line_start": 24, "line_end": 27, "severity": "medium", "note": "error swallowed, empty array returned"},
+        {"category": "path-traversal", "line_start": 35, "line_end": 35, "severity": "high", "note": "client-controlled file path"},
+        {"category": "command-injection", "line_start": 42, "line_end": 42, "severity": "critical", "note": "exec with shell interpolation"},
+        {"category": "n-plus-one-query", "line_start": 51, "line_end": 54, "severity": "medium", "note": "one query per id in a loop"},
+        {"category": "sql-injection", "line_start": 52, "line_end": 52, "severity": "critical", "note": "id concatenated into SQL in helper"}
+      ]
+    },
+    "frontend/ProfileCard.tsx": {
+      "language": "typescript",
+      "layer": "frontend",
+      "defects": [
+        {"category": "hardcoded-secret", "line_start": 6, "line_end": 6, "severity": "high", "note": "Segment write key bundled into client JS"},
+        {"category": "hardcoded-secret", "line_start": 7, "line_end": 7, "severity": "critical", "note": "admin GitHub token bundled into client JS"},
+        {"category": "error-handling", "line_start": 21, "line_end": 26, "severity": "low", "note": "no error handling, no unmount cleanup on fetch"},
+        {"category": "code-injection", "line_start": 30, "line_end": 30, "severity": "critical", "note": "eval on user-controlled note (browser RCE)"},
+        {"category": "xss", "line_start": 40, "line_end": 40, "severity": "high", "note": "dangerouslySetInnerHTML with server HTML"},
+        {"category": "xss", "line_start": 42, "line_end": 42, "severity": "medium", "note": "javascript: URI injection"},
+        {"category": "accessibility", "line_start": 48, "line_end": 48, "severity": "low", "note": "img without accessible name"}
+      ]
+    }
+  }
+}

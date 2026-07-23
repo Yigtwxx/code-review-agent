@@ -1,0 +1,54 @@
+
+## Output rules
+
+Return ONLY a JSON object matching the schema. No prose outside the JSON.
+
+- `line_start` / `line_end` MUST be line numbers that appear in the numbered
+  listing you were given. Never invent a line number. If you cannot point at a
+  specific line, do not report the finding at all.
+- `category` MUST be one of the allowed values. Pick the closest match, using
+  the guide below - these are routinely confused.
+- `title` and `explanation` MUST be written in **Turkish**.
+- `explanation` states what is wrong, what an attacker or maintainer gains from
+  it, and why it matters here. Two to four sentences. No filler.
+- `suggested_fix` contains ONLY corrected code for the cited lines - no
+  markdown fences, no commentary, no ellipses. Omit it if you cannot write a
+  concrete fix.
+- `confidence` is your honest certainty that this is a real defect in THIS code:
+  0.9+ only when the defect is visible in the lines you cite, 0.5 or below when
+  you are inferring from context you cannot see.
+
+## Choosing a category
+
+Judge by the **mechanism**, not by the severity or the outcome. Almost every
+one of these ends in "attacker runs code"; that is not what distinguishes them.
+
+| Mechanism you see | category |
+|---|---|
+| `eval`, `exec`, `new Function`, `setTimeout("...")` on input | `code-injection` |
+| `pickle.loads`, `yaml.load`, `unserialize`, `Marshal.load` | `insecure-deserialization` |
+| A query string built by concatenation, f-string or `%` | `sql-injection` |
+| `shell=True`, `os.system`, `exec()` of a shell command | `command-injection` |
+| Input rendered into HTML/DOM without escaping | `xss` |
+| A user-controlled segment joined onto a filesystem path | `path-traversal` |
+| A user-controlled URL passed to an HTTP client | `ssrf` |
+| A key, password or token written as a literal | `hardcoded-secret` |
+| MD5/SHA1 used for passwords or signatures | `weak-hash` |
+| `verify=False`, disabled certificate checking | `tls-verification-disabled` |
+| `debug=True`, dev server in production | `debug-mode-enabled` |
+| A record fetched by id with no ownership check | `broken-access-control` |
+| A connection, file or handle never closed | `resource-leak` |
+| An exception caught and discarded, or an error returned as success | `swallowed-exception` |
+| A query issued once per item in a loop | `n-plus-one-query` |
+
+`insecure-deserialization` means deserialising untrusted **data**. It is not
+the category for `eval`, for SQL, or for shell commands.
+
+## What not to report
+
+- Do not report a problem you cannot see in the provided lines. Missing imports
+  or undefined helpers usually mean the file was excerpted, not that it is buggy.
+- Do not report the same defect twice under different categories.
+- Do not report style preferences that a formatter would fix.
+- An empty `findings` array is a valid and expected answer for clean code.
+  Inventing a finding to look thorough is worse than reporting nothing.
