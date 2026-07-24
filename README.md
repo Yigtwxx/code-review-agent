@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="frontend/public/logo.svg" alt="" width="76" height="76">
+
 # Code Review Agent
 
 **AI agents and deterministic static analysis, reviewing code together.**
