@@ -32,10 +32,11 @@ storage/
 # --- benchmark output (raw runs; the filled tables live in docs/) ---
 benchmarks/results/
 
-# --- os / editor ---
+# --- os / editor / tooling ---
 .DS_Store
 .idea/
 .vscode/
+.impeccable/
 
 # staj görev dökümanı — repoya girmez
 *.pdf
