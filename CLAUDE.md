@@ -1,43 +1,45 @@
 # Code Review Agent
 
-AI ajan destekli kod inceleme ve güvenlik analiz sistemi. Yüklenen kodu katmanlara
-(Frontend / Backend / Database / Config-Infra) ayırır, her katmana özel LangGraph ajanı
-**güvenlik** ve **kalite** lens'leriyle inceler, statik analiz araçlarıyla çapraz doğrular
-ve düzeltilmiş kod (`refactored_code`) üretir. Sonuçlar GitHub PR review ekranına benzeyen
-bir web arayüzünde satır içi yorum olarak gösterilir.
+Agent-based code review and security analysis system. Submitted code is partitioned
+into architectural layers (Frontend / Backend / Database / Config-Infra), each layer
+is reviewed by a dedicated LangGraph agent under a **security** and a **quality**
+lens, every agent finding is cross-validated against deterministic static analysis,
+and verified refactored code (`refactored_code`) is produced. Results are presented
+as inline comments in a GitHub pull-request-style web UI.
 
-Kaynak görev tanımı: `AI_Agent_Code_Review_ve_Guvenlik_Analizi_Dokumantasyonu.pdf.pdf`
+The source assignment brief is not part of the repository (`*.pdf` is gitignored).
 
 ## Stack
 
-| Katman | Teknoloji |
+| Layer | Technology |
 |---|---|
 | Backend | Python 3.12 (uv), FastAPI, LangChain + LangGraph, Beanie + Motor |
-| LLM | Ollama (lokal) — varsayılan `qwen3.6:35b-a3b`, alternatif `qwen2.5-coder:7b-instruct-q4_K_M` |
-| Statik analiz | Ruff, Bandit, Semgrep, ESLint, gitleaks, tree-sitter |
-| DB | MongoDB 7 (Docker Compose) |
-| Frontend | Next.js 15 App Router, TypeScript `strict`, Tailwind, shadcn/ui, Shiki |
+| LLM | Ollama (local) — default `qwen3.6:35b-a3b`, alternative `qwen2.5-coder:7b-instruct-q4_K_M` |
+| Static analysis | Ruff, Bandit, ESLint (+ eslint-plugin-security), tree-sitter, custom secret scanner |
+| Database | MongoDB 7 (Docker Compose) |
+| Frontend | Next.js 16 App Router, TypeScript `strict`, Tailwind 4, Shiki |
 | Realtime | FastAPI WebSocket |
 
-## Komutlar
+## Commands
 
 ```bash
-# altyapı — bu makinede brew mongodb-community@7.0 zaten 27017'de çalışıyor ve
-# veri (code_review_agent) orada; compose mongo'yu başlatma, ikisi çakışır
+# Infrastructure. Skip if a local mongod already listens on 27017 — two instances
+# on the same port conflict, and `localhost` resolves to the host one.
 docker compose up -d mongo
 
-# backend — port 8001, uvicorn'un varsayılan 8000'i başka projeye ait
+# Backend. Port 8001 rather than the uvicorn default 8000, which is reserved
+# for another service in this environment.
 cd backend && uv sync && uv run uvicorn app.main:app --reload --port 8001
 
-# frontend
+# Frontend
 cd frontend && npm run dev
 
-# doğrulama
+# Verification
 cd backend && uv run ruff check . && uv run ruff format --check . && uv run pytest
-cd frontend && npx tsc --noEmit && npm test
+cd frontend && npx tsc --noEmit && npx eslint src && npm test
 ```
 
-## Mimari
+## Architecture
 
 ```
 ingest → static_scan → partition → injection_guard → supervisor
@@ -50,56 +52,75 @@ ingest → static_scan → partition → injection_guard → supervisor
               aggregate → hallucination_check → refactor → validate → report
 ```
 
-Her node WebSocket'e ilerleme event'i basar (`node_started`, `finding_found`, `node_finished`).
+Every node emits progress events over the WebSocket (`node_started`,
+`finding_found`, `node_finished`).
 
-## Mimari kuralları
+Full rationale: [`docs/architecture.md`](docs/architecture.md).
 
-- LangGraph node'ları `backend/app/agents/nodes/` altında — her node tek dosya, tek sorumluluk.
-- Prompt'lar **koda gömülmez** — `backend/app/prompts/*.jinja2`.
-- Model adı **hardcode edilmez** — `settings.llm_model` üzerinden okunur.
-- LLM çağrıları `tenacity` ile retry+backoff sarmalanır; `temperature=0.1` + JSON şema zorlaması
-  (determinizm — bkz. `docs/keywords.md` "Determinism in Code Generation").
-- Tüm ajan çıktıları Pydantic `Finding` şemasına uyar; şemasız serbest metin kabul edilmez.
-- LLM bulguları statik analiz bulgularıyla çapraz doğrulanır (`corroborated_by_static`) —
-  hibrit doğrulama halüsinasyonu elemenin birincil mekanizması, atlanmaz.
-- MongoDB sorguları **daima** `user_id` filtresi içerir (IDOR koruması) — tek nokta: `app/auth/deps.py`.
+## Architectural rules
 
-## Güvenlik
+- LangGraph nodes live under `backend/app/agents/nodes/` — one file, one
+  responsibility per node.
+- Prompts are **never inlined in code** — they belong in `backend/app/prompts/*.jinja2`.
+- Model names are **never hardcoded** — always read through `settings.llm_model`.
+- LLM calls are wrapped in `tenacity` retry with backoff; `temperature=0.1` plus
+  enforced JSON schema output (determinism — see "Determinism in Code Generation"
+  in `docs/keywords.md`).
+- All agent output conforms to the Pydantic `Finding` schema. Free-form text
+  without a schema is not accepted.
+- LLM findings are cross-validated against static analysis results
+  (`corroborated_by_static`). Hybrid validation is the primary mechanism for
+  eliminating hallucinations and must not be bypassed.
+- MongoDB queries **always** carry a `user_id` filter (IDOR protection),
+  enforced in a single place: `app/auth/deps.py`.
 
-- **Analiz edilen kod asla çalıştırılmaz.** Yalnızca parse + statik analiz.
-- ZIP açarken zip-slip (`../`) koruması, boyut ve dosya sayısı limiti zorunlu.
-- Secret'lar yalnızca env'den (`pydantic-settings`); `.env`, `*.pem`, `*.key` gitignore'da;
-  log'a hiçbir seviyede credential basılmaz.
-- Kullanıcı kodu LLM'e **veri** olarak verilir; `injection_guard` node'u bypass edilmez.
-- JWT: kısa ömürlü access token + httpOnly refresh cookie; parola hash'i argon2.
-- Kullanıcının GitHub token'ı MongoDB'de Fernet ile şifreli tutulur.
+## Security
 
-## Kod stili
+- **Submitted code is never executed.** Parsing and static analysis only.
+- ZIP extraction rejects zip-slip (`../`) entries and enforces limits on entry
+  count and uncompressed size.
+- Secrets come exclusively from the environment (`pydantic-settings`); `.env`,
+  `*.pem` and `*.key` are gitignored; credentials are never written to logs at
+  any level.
+- User code is passed to the LLM as **data**, not instruction. The
+  `injection_guard` node is never bypassed.
+- JWT: short-lived access token plus httpOnly refresh cookie; passwords hashed
+  with argon2.
+- Per-user GitHub tokens are encrypted at rest in MongoDB with Fernet.
 
-- **Python:** tip anotasyonu zorunlu, `ruff format` (88 karakter), `X | None` (`Optional` değil),
-  f-string, import sırası stdlib → third-party → local.
-- **TypeScript:** `strict: true`, `any` yasak (`unknown` kullan), `undefined` tercih,
-  prettier tek tırnak, `async/await` (`.then()` zinciri değil).
-- **Testler:** backend `backend/tests/test_*.py` (pytest), frontend `*.test.ts(x)` (vitest).
-- Kod, identifier ve yorumlar **İngilizce**; döküman ve rapor **Türkçe**.
+## Code style
 
-## Dizin haritası
+- **Python:** type annotations required, `ruff format` (88 columns), `X | None`
+  (not `Optional`), f-strings, import order stdlib → third-party → local.
+- **TypeScript:** `strict: true`, `any` is forbidden (use `unknown`), prefer
+  `undefined` over `null`, prettier with single quotes, `async/await` rather than
+  `.then()` chains.
+- **Tests:** backend `backend/tests/test_*.py` (pytest), frontend `*.test.ts(x)`
+  (vitest).
+- Code, identifiers and comments are written in **English**. Project documentation
+  under `docs/` is written in **Turkish**.
 
-| Yol | İçerik |
+## Directory map
+
+| Path | Contents |
 |---|---|
-| `backend/app/agents/` | LangGraph state, graph, node'lar — sistemin çekirdeği |
-| `backend/app/prompts/` | Ajan persona ve lens prompt template'leri (jinja2) |
-| `backend/app/static_analysis/` | Ruff/Bandit/Semgrep/ESLint/gitleaks/tree-sitter sarmalayıcıları |
-| `backend/app/ingest/` | Upload, ZIP, paste, GitHub PR diff normalizasyonu |
-| `frontend/components/review/` | PR-benzeri diff görüntüleyici ve bulgu thread'leri |
-| `samples/vulnerable/` | Kasıtlı hatalı örnek kodlar (+ `ground_truth.json` etiketleri) |
-| `samples/clean/` | Temiz karşılıklar — false positive kontrolü için |
-| `benchmarks/` | Model karşılaştırma harness'ı (Detection Rate / FP / Fix Accuracy / Latency) |
-| `docs/` | Mimari, 15 anahtar kelime, sonuç raporu |
+| `backend/app/agents/` | LangGraph state, graph and nodes — the core of the system |
+| `backend/app/prompts/` | Agent persona and lens prompt templates (jinja2) |
+| `backend/app/static_analysis/` | Ruff / Bandit / ESLint / tree-sitter / secret-scanner wrappers |
+| `backend/app/ingest/` | Upload, ZIP, paste and GitHub PR diff normalisation |
+| `frontend/src/components/review/` | PR-style diff viewer and inline finding threads |
+| `samples/vulnerable/` | Deliberately vulnerable fixtures (labelled in `ground_truth.json`) |
+| `samples/clean/` | Hardened counterparts — the false-positive control set |
+| `benchmarks/` | Model comparison harness (Detection Rate / FP / Fix Accuracy / Latency) |
+| `tools/eslint/` | Isolated lint toolchain used to analyse submitted TS/JS |
+| `tools/ci/` | GitHub Actions client and example workflow |
+| `docs/` | Architecture, key concepts, result report |
 
-## Notlar
+## Environment notes
 
-- Donanım: Apple M4 Pro, 48 GB RAM. Ollama lokal çalışır; `qwen3.6:35b-a3b` MoE olduğu için
-  (~3B aktif parametre) 35B kalitesini 7B'ye yakın hızda verir.
-- Sistem Python'ı 3.9 — **uv ile 3.12 pinlenmiştir**, sistem `python3`'ü kullanılmaz.
-- Kullanıcı açıkça istemedikçe commit / push / PR açılmaz.
+- The language model runs locally on Ollama. The default `qwen3.6:35b-a3b` is a
+  MoE model (~3B active parameters), delivering 35B-class quality at close to 7B
+  latency on Apple Silicon with 48 GB of unified memory.
+- The system Python is 3.9; **the project pins 3.12 via uv** and never uses the
+  system `python3`.
+- Do not create commits, pushes or pull requests unless explicitly requested.
