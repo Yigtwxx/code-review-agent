@@ -10,6 +10,7 @@ LangGraph agent under a security *and* a quality lens, every agent finding is
 code — shown in a GitHub-style pull-request UI. The language model runs locally on
 Ollama, so reviewed code never leaves the machine.
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
 [![Repository](https://img.shields.io/badge/GitHub-code--review--agent-181717?logo=github)](https://github.com/Yigtwxx/code-review-agent)
 [![Last commit](https://img.shields.io/github/last-commit/Yigtwxx/code-review-agent?logo=git&logoColor=white)](https://github.com/Yigtwxx/code-review-agent/commits/main)
 [![Top language](https://img.shields.io/github/languages/top/Yigtwxx/code-review-agent)](https://github.com/Yigtwxx/code-review-agent)
@@ -26,7 +27,7 @@ Ollama, so reviewed code never leaves the machine.
 [![Ollama](https://img.shields.io/badge/Ollama-local-000000?logo=ollama&logoColor=white)](#stack)
 [![Tailwind](https://img.shields.io/badge/Tailwind%204-06B6D4?logo=tailwindcss&logoColor=white)](#stack)
 
-[Highlights](#highlights) · [Architecture](#architecture) · [Benchmarks](#benchmarks) · [Quickstart](#quickstart) · [Try it](#try-it) · [Security](#security-posture) · [Docs](#documentation)
+[Highlights](#highlights) · [Architecture](#architecture) · [Benchmarks](#benchmarks) · [Quickstart](#quickstart) · [Try it](#try-it) · [Security](#security-posture) · [Docs](#documentation) · [License](#license)
 
 </div>
 
@@ -190,40 +191,64 @@ analysis: [`docs/sonuc-raporu.md`](docs/sonuc-raporu.md).
 
 ## Quickstart
 
-**Requirements:** Python 3.12 (pinned by `uv`), Node.js 20+, Docker or a local
-`mongod`, and Ollama with at least one code model pulled.
+**Requirements:** [uv](https://docs.astral.sh/uv/) (it pins Python 3.12 itself),
+Node.js 20+, Docker or a local `mongod`, and [Ollama](https://ollama.com) with at
+least one code model pulled.
 
 ```bash
-# 0. Clone
 git clone https://github.com/Yigtwxx/code-review-agent.git
 cd code-review-agent
 
+ollama pull qwen3.6:35b-a3b          # default; qwen2.5-coder:7b is the light one
+
+./start.sh                           # macOS / Linux
+start.bat                            # Windows
+```
+
+The start script is the whole setup: it installs backend and frontend
+dependencies, creates `.env` from `.env.example` and generates `JWT_SECRET` and
+`FERNET_KEY` locally (existing values are never overwritten), writes
+`frontend/.env.local`, brings MongoDB up via Docker *only* if nothing already
+answers on 27017, warns if Ollama is not running, then starts both servers and
+shuts them down together on Ctrl+C.
+
+UI at `http://localhost:3000`, API docs at `http://localhost:8001/docs`.
+
+Port 8001 rather than the uvicorn default 8000, so the API does not collide with
+whatever else is already on 8000. Ports are overridable:
+
+```bash
+BACKEND_PORT=8002 FRONTEND_PORT=3001 ./start.sh
+```
+
+To review **TypeScript/JavaScript**, install the pinned lint toolchain once — it is
+deliberately isolated from both this project and the reviewed one, so the rule set
+never depends on whatever config the submitted code ships:
+
+```bash
+cd tools/eslint && npm install
+```
+
+<details>
+<summary><b>Manual setup</b> — if you would rather not run a script</summary>
+
+```bash
 # 1. Environment
 cp .env.example .env
 python3 -c "import secrets; print('JWT_SECRET=' + secrets.token_urlsafe(48))"
 python3 -c "from cryptography.fernet import Fernet; print('FERNET_KEY=' + Fernet.generate_key().decode())"
-# paste both into .env
+# paste both into .env, replacing the change-me placeholders
 
 # 2. Database — skip if a local mongod already listens on 27017; two mongods on
 # the same port means `localhost` resolves to the host one and the container
 # stays empty. Check with: lsof -nP -iTCP:27017 -sTCP:LISTEN
 docker compose up -d mongo
 
-# 3. Model
-ollama pull qwen3.6:35b-a3b          # default
-ollama pull qwen2.5-coder:7b         # lighter alternative
-
-# 4. Backend
+# 3. Dependencies
 cd backend && uv sync
-
-# 5. TypeScript analysis toolchain (needed to review TS/JS)
-cd ../tools/eslint && npm install
-
-# 6. Frontend
+cd ../tools/eslint && npm install    # TS/JS analysis toolchain
 cd ../../frontend && npm install
 ```
-
-**Run it:**
 
 ```bash
 # terminal 1
@@ -233,12 +258,10 @@ cd backend && uv run uvicorn app.main:app --reload --port 8001
 cd frontend && npm run dev
 ```
 
-UI at `http://localhost:3000`, API docs at `http://localhost:8001/docs`.
+Using different ports? Put `NEXT_PUBLIC_API_BASE=http://localhost:<port>` in
+`frontend/.env.local` and add the UI origin to `CORS_ORIGINS` in `.env`.
 
-Port 8001 rather than the uvicorn default 8000, so the API does not collide with
-whatever else is already on 8000. Using different ports? Put
-`NEXT_PUBLIC_API_BASE=http://localhost:<port>` in `frontend/.env.local` and add the
-UI origin to `CORS_ORIGINS` in `.env`.
+</details>
 
 ## Try it
 
@@ -298,8 +321,10 @@ frontend/src/
 benchmarks/        Model/config benchmark harness (Detection / FP / Fix / Latency)
 tools/eslint/      Isolated lint toolchain for reviewed TS/JS
 tools/ci/          GitHub Actions client and example workflow
+tools/init_env.py  Generates the local .env secrets the start scripts need
 samples/           Labelled vulnerable and clean fixtures + ground_truth.json
 docs/              Architecture, key concepts, result report
+start.sh start.bat One-command dev stack for macOS/Linux and Windows
 ```
 
 ## Documentation
@@ -310,3 +335,10 @@ docs/              Architecture, key concepts, result report
 
 > Documentation is written in Turkish (project language); code, identifiers and
 > comments are in English.
+
+## License
+
+[MIT](LICENSE) © 2026 Yigit Erdogan.
+
+The third-party analysers this project drives (Ruff, Bandit, ESLint, tree-sitter)
+and the models it runs on Ollama keep their own licences.
