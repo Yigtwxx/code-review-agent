@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
+import { Logo } from '@/components/ui/logo';
 import { Button, Spinner } from '@/components/ui/primitives';
 import { useAuth } from '@/lib/auth-context';
 import { cn } from '@/lib/utils';
@@ -38,13 +39,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           offsets on top of this, so its height is a token, not a guess. */}
       <header className="border-border-default bg-surface/90 sticky top-0 z-40 h-[var(--app-header-height)] border-b backdrop-blur">
         <div className="mx-auto flex h-full max-w-[1400px] items-center gap-3 px-4 sm:gap-6">
-          {/* Below `sm` the teal dot stands in for the wordmark: the header is
-              a fixed height, so nothing in it may wrap to a second line. */}
+          {/* Below `sm` the mark stands in for the wordmark: the header is a
+              fixed height, so nothing in it may wrap to a second line. */}
           <Link
             href="/dashboard"
             className="flex shrink-0 items-center gap-2 text-sm font-semibold whitespace-nowrap"
           >
-            <span aria-hidden className="bg-verified size-2 rounded-full" />
+            <Logo size={20} />
             <span className="sr-only sm:not-sr-only">Code Review Agent</span>
           </Link>
 

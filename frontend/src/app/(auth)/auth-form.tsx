@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import { z } from 'zod';
 
+import { Logo } from '@/components/ui/logo';
 import { Alert, Button, Card, Field, Spinner } from '@/components/ui/primitives';
 import { ApiError } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
@@ -81,8 +82,8 @@ export function AuthForm({ mode }: { mode: Mode }) {
     <main id="main" className="flex flex-1 items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm">
         <div className="mb-6 text-center">
-          <h1 className="text-title inline-flex items-center gap-2">
-            <span aria-hidden className="bg-verified size-2 rounded-full" />
+          <h1 className="text-title inline-flex items-center gap-2.5">
+            <Logo size={22} />
             Code Review Agent
           </h1>
           <p className="text-muted mt-1 text-sm">
