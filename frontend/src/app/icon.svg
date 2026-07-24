@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Code Review Agent">
+  <!--
+    Tab-sized variant of the mark: strokes are heavier and the margins tighter
+    than public/logo.svg, because a browser tab renders this at 16px and the
+    hairlines of the full-size mark disappear there.
+
+    The dark plate ships with the icon on purpose - the app is dark-only, and a
+    bare bone-white mark would vanish against a light tab strip.
+  -->
+  <rect width="32" height="32" rx="7" fill="#0A0D14"/>
+  <rect x="6.5" y="7" width="2.75" height="18" rx="1.375" fill="#ECEFF4"/>
+  <rect x="12.5" y="8" width="13.5" height="2.75" rx="1.375" fill="#ECEFF4"/>
+  <rect x="12.5" y="14.625" width="6.5" height="2.75" rx="1.375" fill="#ECEFF4"/>
+  <circle cx="22.5" cy="16" r="2.4" fill="#2DD4BF"/>
+  <rect x="12.5" y="21.25" width="10" height="2.75" rx="1.375" fill="#ECEFF4"/>
+</svg>
